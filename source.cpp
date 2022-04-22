@@ -56,24 +56,47 @@ void rSort(std::vector<std::string> &strVec, std::vector<int> dupIndex, int rC){
 
 void writeVec(std::vector<std::string> &strVec, std::vector<int> &dupIndex){
     std::string id;
-    std::cout << "ENTER TEXTFILE IDENTIFIER\n";
+    std::fstream dict;
+    std::string rawStr;
+    std::smatch matches,charMatches;
+
+    std::regex wrds("([a-zA-Z]+)");
+    std::regex charMatch("(&q)+");
+
+    std::cout << "ENTER TEXTFILE IDENTIFIER:\n";
     std::cin >> id;
     id.append(".txt");
-    std::fstream dict;
+    
+
+    
+    //CHARACTER MATCHING TEST FOR INLINE SEARCHING
     dict.open(id,std::ios::in);
-    std::string rawStr;
-    std::smatch matches;
-    std::regex reg("([a-zA-Z]+)");
+    while(getline(dict,rawStr)){
+        while(std::regex_search(rawStr,charMatches,charMatch)){
+            std::cout << "CHARMATCH MADE\n";
+            std::cout << rawStr << "\n\n";
+            std::regex_replace(rawStr,charMatch,"");
+            rawStr = charMatches.suffix().str();
+            std::cout << rawStr << "\n";
+        }
+    }
+    dict.close();
+    
+    //FILL VECTOR WITH STRINGS FROM WRDS REGEX
+    dict.open(id,std::ios::in);
     int i=0;
     while(getline(dict,rawStr)){
         //getline(dict,rawStr);
-        while (std::regex_search(rawStr,matches,reg)){
+        while (std::regex_search(rawStr,matches,wrds)){
             strVec.push_back(matches.str());
             dupIndex.push_back(i);
             rawStr = matches.suffix().str();
             ++i;
         }
     }
+    dict.close();
+    
+    
 }
 
 int main(){
