@@ -56,22 +56,21 @@ void rSort(std::vector<std::string> &strVec, std::vector<int> dupIndex, int rC){
 
 void writeVec(std::vector<std::string> &strVec, std::vector<int> &dupIndex){
     std::fstream dict;
-    std::string id, rawStr, vectorElement;
+    std::string docId, docStream;
     std::smatch wrdCharMatches;
     std::regex wrdChar("&q[a-zA-Z]+");
     std::cout << "ENTER TEXTFILE IDENTIFIER:\n";
-    std::cin >> id;
-    id.append(".txt");
+    std::cin >> docId;
+    docId.append(".txt");
     
     //ADD MATCHED CHARS ONLY TO VEC
-    dict.open(id,std::ios::in);
+    dict.open(docId,std::ios::in);
     int i=0;
-    while(getline(dict,rawStr)){
-        while(std::regex_search(rawStr,wrdCharMatches,wrdChar)){
-            vectorElement = wrdCharMatches.str().erase(0,2);
-            strVec.push_back(vectorElement);
+    while(getline(dict,docStream)){
+        while(std::regex_search(docStream,wrdCharMatches,wrdChar)){
+            strVec.push_back(wrdCharMatches.str().erase(0,2));
             dupIndex.push_back(i);
-            rawStr = wrdCharMatches.suffix().str();
+            docStream = wrdCharMatches.suffix().str();
             ++i;
         }
     }
