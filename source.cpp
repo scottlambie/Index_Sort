@@ -55,48 +55,27 @@ void rSort(std::vector<std::string> &strVec, std::vector<int> dupIndex, int rC){
 }
 
 void writeVec(std::vector<std::string> &strVec, std::vector<int> &dupIndex){
-    std::string id;
     std::fstream dict;
-    std::string rawStr;
-    std::smatch matches,charMatches;
-
-    std::regex wrds("([a-zA-Z]+)");
-    std::regex charMatch("(&q)+");
-
+    std::string id, rawStr, vectorElement;
+    std::smatch wrdCharMatches;
+    std::regex wrdChar("&q[a-zA-Z]+");
     std::cout << "ENTER TEXTFILE IDENTIFIER:\n";
     std::cin >> id;
     id.append(".txt");
     
-
-    
-    //CHARACTER MATCHING TEST FOR INLINE SEARCHING
-    dict.open(id,std::ios::in);
-    while(getline(dict,rawStr)){
-        while(std::regex_search(rawStr,charMatches,charMatch)){
-            std::cout << "CHARMATCH MADE\n";
-            std::cout << rawStr << "\n\n";
-            std::regex_replace(rawStr,charMatch,"");
-            rawStr = charMatches.suffix().str();
-            std::cout << rawStr << "\n";
-        }
-    }
-    dict.close();
-    
-    //FILL VECTOR WITH STRINGS FROM WRDS REGEX
+    //ADD MATCHED CHARS ONLY TO VEC
     dict.open(id,std::ios::in);
     int i=0;
     while(getline(dict,rawStr)){
-        //getline(dict,rawStr);
-        while (std::regex_search(rawStr,matches,wrds)){
-            strVec.push_back(matches.str());
+        while(std::regex_search(rawStr,wrdCharMatches,wrdChar)){
+            vectorElement = wrdCharMatches.str().erase(0,2);
+            strVec.push_back(vectorElement);
             dupIndex.push_back(i);
-            rawStr = matches.suffix().str();
+            rawStr = wrdCharMatches.suffix().str();
             ++i;
         }
     }
     dict.close();
-    
-    
 }
 
 int main(){
@@ -111,8 +90,8 @@ int main(){
     std::ofstream sorted;
     sorted.open("sorted.txt");
     
-    for(int i=0;i<strVec.size();++i){
-        sorted << strVec[i] << ", ";
+    for(int i=1;i<strVec.size()+1;++i){
+        sorted << strVec[i-1] << ", ";
         if((i%10)==0)
             sorted << "\n";
     }
