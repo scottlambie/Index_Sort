@@ -54,11 +54,12 @@ void rSort(std::vector<std::string> &strVec, std::vector<int> dupIndex, int rC){
     }
 }
 
-void writeVec(std::vector<std::string> &strVec, std::vector<int> &dupIndex){
+void writeVec(std::vector<std::string> &strVec, std::vector<int> &dupIndex, std::vector<std::string> &descStrVec){
     std::fstream dict;
     std::string docId, docStream;
-    std::smatch wrdCharMatches;
+    std::smatch wrdCharMatches, descStringMatches;
     std::regex wrdChar("&q[a-zA-Z]+");
+    std::regex descReg("&d(.*?)&d");
     std::cout << "ENTER TEXTFILE IDENTIFIER:\n";
     std::cin >> docId;
     docId.append(".txt");
@@ -75,13 +76,29 @@ void writeVec(std::vector<std::string> &strVec, std::vector<int> &dupIndex){
         }
     }
     dict.close();
+
+    //INLINE OPEN/CLOSING TAG MATCHING FOR DESCRIPTIONS
+    std::string tempstring;
+    dict.open(docId,std::ios::in);
+    while(getline(dict,docStream)){
+        while(std::regex_search(docStream,descStringMatches, descReg)){
+            tempstring = descStringMatches.str();
+            tempstring.erase(tempstring.begin(),tempstring.begin()+2);
+            tempstring.erase(tempstring.end()-2,tempstring.end());
+            descStrVec.push_back(tempstring);
+            docStream = descStringMatches.suffix().str();
+        }
+    }
 }
 
 int main(){
     std::vector<std::string> strVec;
+    //TEMPORARY DESCRIPTION VECTOR UNORDERED
+    //TODO: MAPPING(STRVEC & RELATED DESCSTRVEC ELEMENTS)
+    std::vector<std::string> descStrVec;
     std::vector<int> dupIndex;
 
-    writeVec(strVec,dupIndex);
+    writeVec(strVec,dupIndex,descStrVec);
 
     int rC = -1;
     rSort(strVec,dupIndex,rC);
@@ -94,8 +111,13 @@ int main(){
         if((i%10)==0)
             sorted << "\n";
     }
+
+    sorted << "\n\n";
     
+    for (int i=0;i<descStrVec.size();++i)
+        sorted << descStrVec[i] << "\n";
     sorted.close();
-    std::cout << "sorted.txt written\nCHARS WRITTEN: " << strVec.size() << "\tLINES: " << ((strVec.size()/10)+1) << "\n";
+    
+    std::cout << "\nsorted.txt written\nCHARS WRITTEN: " << strVec.size() << "\tLINES: " << ((strVec.size()/10)+1) << "\n";
     return 0;
 }
