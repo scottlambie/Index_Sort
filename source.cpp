@@ -8,32 +8,36 @@
 
 #include "lib/quicksort.h"
 
-const int arrLength = 23;
+struct dictItem{
+    public:
+    std::string dictWrd;
+    std::string dictDesc;
+};
 
-void swap(std::vector<std::string> &strVec, int a, int b){
-    std::string temp = strVec[a];
-    strVec[a] = strVec[b];
-    strVec[b] = temp;
+void swap(std::vector<dictItem> &dictionary, int a, int b){
+    dictItem temp = dictionary[a];
+    dictionary[a] = dictionary[b];
+    dictionary[b] = temp;
 }
 
-void rSort(std::vector<std::string> &strVec, std::vector<int> dupIndex, int rC){
+void rSort(std::vector<int> dupIndex, int rC, std::vector<dictItem> &dictionary){
     ++rC;
     //FILL INT ARRAY
     int intArr[dupIndex.size()];
     for (int i=0;i<dupIndex.size();++i){
-        intArr[i] = strVec[dupIndex[i]][rC];
+        intArr[i] = dictionary[dupIndex[i]].dictWrd[rC];
     }
     //SORT INT ARRAY
     quicksort(intArr,dupIndex.size());
 \
-    //SORT STRVEC BY STR CHAR[RC] ACCORDING TO INTARR
+    //SORT DICTIONARY BY STR CHAR[RC] ACCORDING TO INTARR
     int c=0;
     for (int i=dupIndex[0];i<dupIndex[0]+dupIndex.size();++i){
         for (int j=dupIndex[0]+c;j<dupIndex[0]+dupIndex.size();++j){
-            if(strVec[j][rC]==intArr[c]){
-                swap(strVec,i,j);
+            if(dictionary[j].dictWrd[rC]==intArr[c]){
+                swap(dictionary,i,j);
                 intArr[c] = 0;
-                ++c;      
+                ++c;
                 break;
             }
         }
@@ -42,19 +46,20 @@ void rSort(std::vector<std::string> &strVec, std::vector<int> dupIndex, int rC){
     //FIND DUPLICATE STR CHAR[RC] AND RECURSE
     std::vector<int> rDupIndex;
     for(int i=dupIndex[0];i<dupIndex.back();++i){ 
-        if(strVec[i][rC]==strVec[i+1][rC]){
+        if(dictionary[i].dictWrd[rC]==dictionary[i+1].dictWrd[rC]){
             rDupIndex.push_back(i);
-            while(i<dupIndex.back() && strVec[i][rC]==strVec[i+1][rC]){
+            while(i<dupIndex.back() && dictionary[i].dictWrd[rC]==dictionary[i+1].dictWrd[rC]){
                 rDupIndex.push_back(i+1);
                 ++i;
             }
-            rSort(strVec,rDupIndex,rC);
+            rSort(rDupIndex,rC,dictionary);
             rDupIndex.clear();
         }
     }
 }
 
-void writeVec(std::vector<std::string> &strVec, std::vector<int> &dupIndex, std::vector<std::string> &descStrVec){
+void writeVec(std::vector<int> &dupIndex, std::vector<dictItem> &dictionary){
+    
     std::fstream dict;
     std::string docId, docStream;
     std::smatch wrdCharMatches, descStringMatches;
@@ -69,7 +74,7 @@ void writeVec(std::vector<std::string> &strVec, std::vector<int> &dupIndex, std:
     int i=0;
     while(getline(dict,docStream)){
         while(std::regex_search(docStream,wrdCharMatches,wrdChar)){
-            strVec.push_back(wrdCharMatches.str().erase(0,2));
+            dictionary.push_back({(wrdCharMatches.str().erase(0,2)),""});
             dupIndex.push_back(i);
             docStream = wrdCharMatches.suffix().str();
             ++i;
@@ -78,46 +83,47 @@ void writeVec(std::vector<std::string> &strVec, std::vector<int> &dupIndex, std:
     dict.close();
 
     //INLINE OPEN/CLOSING TAG MATCHING FOR DESCRIPTIONS
-    std::string tempstring;
+    std::string tempString;
+    std::string userInput;
     dict.open(docId,std::ios::in);
     while(getline(dict,docStream)){
         while(std::regex_search(docStream,descStringMatches, descReg)){
-            tempstring = descStringMatches.str();
-            tempstring.erase(tempstring.begin(),tempstring.begin()+2);
-            tempstring.erase(tempstring.end()-2,tempstring.end());
-            descStrVec.push_back(tempstring);
+            tempString = descStringMatches.str();
+            tempString.erase(tempString.begin(),tempString.begin()+2);
+            tempString.erase(tempString.end()-2,tempString.end());
+            std::cout << "\nDescription:\n'" << tempString << "'\nFound.\nEnter associated word to match description to:";
+            std::cin >> userInput;
+            for(int i=0;i<dictionary.size();++i){
+                if(userInput == dictionary[i].dictWrd)
+                    dictionary[i].dictDesc = tempString;
+            }
             docStream = descStringMatches.suffix().str();
         }
     }
 }
 
 int main(){
-    std::vector<std::string> strVec;
+    std::vector<dictItem> dictionary;
     //TEMPORARY DESCRIPTION VECTOR UNORDERED
     //TODO: MAPPING(STRVEC & RELATED DESCSTRVEC ELEMENTS)
-    std::vector<std::string> descStrVec;
     std::vector<int> dupIndex;
 
-    writeVec(strVec,dupIndex,descStrVec);
+    writeVec(dupIndex,dictionary);
 
     int rC = -1;
-    rSort(strVec,dupIndex,rC);
+    rSort(dupIndex,rC,dictionary);
     
     std::ofstream sorted;
     sorted.open("sorted.txt");
     
-    for(int i=1;i<strVec.size()+1;++i){
-        sorted << strVec[i-1] << ", ";
-        if((i%10)==0)
-            sorted << "\n";
+    for(int i=1;i<dictionary.size()+1;++i){
+        if (dictionary[i-1].dictDesc != ""){
+            sorted << "\n" << dictionary[i-1].dictWrd << ":\n" << dictionary[i-1].dictDesc << "\n\n";
+        }else{
+            sorted << dictionary[i-1].dictWrd << ", ";
+        }
     }
-
-    sorted << "\n\n";
     
-    for (int i=0;i<descStrVec.size();++i)
-        sorted << descStrVec[i] << "\n";
-    sorted.close();
-    
-    std::cout << "\nsorted.txt written\nCHARS WRITTEN: " << strVec.size() << "\tLINES: " << ((strVec.size()/10)+1) << "\n";
+    std::cout << "\nsorted.txt written\nCHARS WRITTEN: " << dictionary.size();
     return 0;
 }
