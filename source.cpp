@@ -9,7 +9,7 @@
 #include "lib/quicksort.h"
 
 struct dictItem{
-    public:
+    public: //Needed?
     std::string dictWrd;
     std::string dictDesc;
 };
@@ -29,7 +29,6 @@ void rSort(std::vector<int> dupIndex, int rC, std::vector<dictItem> &dictionary)
     }
     //SORT INT ARRAY
     quicksort(intArr,dupIndex.size());
-\
     //SORT DICTIONARY BY STR CHAR[RC] ACCORDING TO INTARR
     int c=0;
     for (int i=dupIndex[0];i<dupIndex[0]+dupIndex.size();++i){
@@ -60,11 +59,12 @@ void rSort(std::vector<int> dupIndex, int rC, std::vector<dictItem> &dictionary)
 
 void writeVec(std::vector<int> &dupIndex, std::vector<dictItem> &dictionary){
     
+    //TODO: Cleanup, include next series of inline chars, new syntax for inline chars(HTML-like(it works))
     std::fstream dict;
     std::string docId, docStream;
     std::smatch wrdCharMatches, descStringMatches;
-    std::regex wrdChar("&q[a-zA-Z]+");
-    std::regex descReg("&d(.*?)&d");
+    std::regex wrdChar("<w>[a-zA-Z]+");
+    std::regex descReg("<d>(.*?)</d>");
     std::cout << "ENTER TEXTFILE IDENTIFIER:\n";
     std::cin >> docId;
     docId.append(".txt");
@@ -74,7 +74,7 @@ void writeVec(std::vector<int> &dupIndex, std::vector<dictItem> &dictionary){
     int i=0;
     while(getline(dict,docStream)){
         while(std::regex_search(docStream,wrdCharMatches,wrdChar)){
-            dictionary.push_back({(wrdCharMatches.str().erase(0,2)),""});
+            dictionary.push_back({(wrdCharMatches.str().erase(0,3)),""});
             dupIndex.push_back(i);
             docStream = wrdCharMatches.suffix().str();
             ++i;
@@ -89,8 +89,17 @@ void writeVec(std::vector<int> &dupIndex, std::vector<dictItem> &dictionary){
     while(getline(dict,docStream)){
         while(std::regex_search(docStream,descStringMatches, descReg)){
             tempString = descStringMatches.str();
-            tempString.erase(tempString.begin(),tempString.begin()+2);
-            tempString.erase(tempString.end()-2,tempString.end());
+            //TODO: Cleanup and compartmentalize(use functions)
+            //REMOVE INLINE CHARS - NOT WORKING
+            /*int i=0;
+            while(i<tempString.length()){
+                if((tempString[i]==38)&&(tempString[i+1]==113)) //CONDITIONAL, CHARS ARE ASCII VALUES &q
+                    tempString.erase(i,2);
+                ++i;
+            }
+            */
+            tempString.erase(tempString.begin(),tempString.begin()+3);
+            tempString.erase(tempString.end()-4,tempString.end());
             std::cout << "\nDescription:\n'" << tempString << "'\nFound.\nEnter associated word to match description to:";
             std::cin >> userInput;
             for(int i=0;i<dictionary.size();++i){
@@ -106,13 +115,17 @@ int main(){
     std::vector<dictItem> dictionary;
     //TEMPORARY DESCRIPTION VECTOR UNORDERED
     //TODO: MAPPING(STRVEC & RELATED DESCSTRVEC ELEMENTS)
+    //TODO: Multiple descriptions mapping to same definition
+    //TODO: definitions linking to one another
     std::vector<int> dupIndex;
 
+    //TODO: input validation, file exists validation, filetype validation
     writeVec(dupIndex,dictionary);
 
     int rC = -1;
     rSort(dupIndex,rC,dictionary);
     
+    //TODO: learn ofstream :)
     std::ofstream sorted;
     sorted.open("sorted.txt");
     
