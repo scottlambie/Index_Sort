@@ -11,7 +11,7 @@
 struct dictItem{
     public: //Needed?
     std::string dictWrd;
-    std::string dictDesc;
+    std::vector<std::string> dictDesc;
 };
 
 void swap(std::vector<dictItem> &dictionary, int a, int b){
@@ -71,10 +71,15 @@ void writeVec(std::vector<int> &dupIndex, std::vector<dictItem> &dictionary){
     
     //ADD MATCHED CHARS ONLY TO VEC
     dict.open(docId,std::ios::in);
+    if(!dict){
+        std::cout << "No file\n";
+        return;
+    }
+
     int i=0;
     while(getline(dict,docStream)){
         while(std::regex_search(docStream,wrdCharMatches,wrdChar)){
-            dictionary.push_back({(wrdCharMatches.str().erase(0,3)),""});
+            dictionary.push_back({(wrdCharMatches.str().erase(0,3))});
             dupIndex.push_back(i);
             docStream = wrdCharMatches.suffix().str();
             ++i;
@@ -90,21 +95,21 @@ void writeVec(std::vector<int> &dupIndex, std::vector<dictItem> &dictionary){
         while(std::regex_search(docStream,descStringMatches, descReg)){
             tempString = descStringMatches.str();
             //TODO: Cleanup and compartmentalize(use functions)
-            //REMOVE INLINE CHARS - NOT WORKING
-            /*int i=0;
+            //REMOVE INLINE CHARS
+            int i=0;
             while(i<tempString.length()){
-                if((tempString[i]==38)&&(tempString[i+1]==113)) //CONDITIONAL, CHARS ARE ASCII VALUES &q
-                    tempString.erase(i,2);
+                if((tempString[i]==60)&&(tempString[i+1]==119)&&(tempString[i+2]==62)) //CONDITIONAL, CHARS ARE ASCII VALUES &q
+                    tempString.erase(i,3);
                 ++i;
             }
-            */
+            
             tempString.erase(tempString.begin(),tempString.begin()+3);
             tempString.erase(tempString.end()-4,tempString.end());
             std::cout << "\nDescription:\n'" << tempString << "'\nFound.\nEnter associated word to match description to:";
             std::cin >> userInput;
             for(int i=0;i<dictionary.size();++i){
                 if(userInput == dictionary[i].dictWrd)
-                    dictionary[i].dictDesc = tempString;
+                    dictionary[i].dictDesc.push_back(tempString);
             }
             docStream = descStringMatches.suffix().str();
         }
@@ -115,12 +120,15 @@ int main(){
     std::vector<dictItem> dictionary;
     //TEMPORARY DESCRIPTION VECTOR UNORDERED
     //TODO: MAPPING(STRVEC & RELATED DESCSTRVEC ELEMENTS)
-    //TODO: Multiple descriptions mapping to same definition
     //TODO: definitions linking to one another
     std::vector<int> dupIndex;
 
     //TODO: input validation, file exists validation, filetype validation
     writeVec(dupIndex,dictionary);
+    if(dictionary.empty()){
+        std::cout << "Dicitonary empty, exiting\n";
+        return 1;
+    }
 
     int rC = -1;
     rSort(dupIndex,rC,dictionary);
@@ -130,8 +138,12 @@ int main(){
     sorted.open("sorted.txt");
     
     for(int i=1;i<dictionary.size()+1;++i){
-        if (dictionary[i-1].dictDesc != ""){
-            sorted << "\n" << dictionary[i-1].dictWrd << ":\n" << dictionary[i-1].dictDesc << "\n\n";
+        if (!dictionary[i-1].dictDesc.empty()){
+            sorted << "\n" << dictionary[i-1].dictWrd << ":\n";
+            for (int j=0;j<dictionary[i-1].dictDesc.size();++j){
+                sorted << dictionary[i-1].dictDesc[j] << "\n";
+            }
+            sorted << "\n";
         }else{
             sorted << dictionary[i-1].dictWrd << ", ";
         }
